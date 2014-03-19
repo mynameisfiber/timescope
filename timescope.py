@@ -3,11 +3,17 @@
 import cv2
 import numpy as np
 from collections import deque
+import sys
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Time Scope -- when you reallly need some sweet rolling shutter effects')
+parser.add_argument('-o', '--output', default=None, help="Filename to output to (leave out for no file output)")
 
 class TimeScope(object):
     def __init__(self, shape, line_size=1, profile=None):
         self.line_size = line_size
-        self.profile = profile or (lambda block_num : block_num // line_size)
+        self.profile = profile or (lambda block_num : block_num // line_size // 2)
         self.num_blocks = shape[0] // line_size
 
         self.queues = [deque(maxlen=self.profile(i*line_size)) for i in xrange(self.num_blocks)]
@@ -34,6 +40,9 @@ class TimeScope(object):
 
 
 if __name__ == "__main__":
+    args = parser.parse_args()
+    filename = args.output
+
     cv2.namedWindow("preview")
     vc = cv2.VideoCapture(0)
 
@@ -42,13 +51,15 @@ if __name__ == "__main__":
     else:
         rval = False
     
-    timescope = TimeScope(frame.shape, line_size=5)
-    fourcc = cv2.cv.CV_FOURCC(*'DIVX')
-    out = cv2.VideoWriter('output.avi', fourcc, 25.0, frame.shape[-2::-1])
+    timescope = TimeScope(frame.shape, line_size=2)
+    if filename: 
+        fourcc = cv2.cv.CV_FOURCC(*'DIVX')
+        out = cv2.VideoWriter(filename, fourcc, 25.0, frame.shape[-2::-1])
     while rval:
         cur_frame = timescope.get_frame()
         cv2.imshow("preview", cur_frame)
-        out.write(cur_frame)
+        if filename:
+            out.write(cur_frame)
     
         rval, frame = vc.read()
         timescope.add_frame(frame)
@@ -57,6 +68,7 @@ if __name__ == "__main__":
         if key == 27: # exit on ESC
             break
     
-    out.release()
+    if filename:
+        out.release()
     vc.release()
     cv2.destroyWindow("preview")
