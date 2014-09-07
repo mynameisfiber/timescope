@@ -3,12 +3,12 @@
 import cv2
 import numpy as np
 from collections import deque
-import sys
 
 import argparse
 
 parser = argparse.ArgumentParser(description='Time Scope -- when you reallly need some sweet rolling shutter effects')
 parser.add_argument('-o', '--output', default=None, help="Filename to output to (leave out for no file output)")
+parser.add_argument('-l', '--line-size', default=2, type=int, help="How many lines should be chunked together")
 
 class TimeScope(object):
     def __init__(self, shape, line_size=1, profile=None):
@@ -42,6 +42,7 @@ class TimeScope(object):
 if __name__ == "__main__":
     args = parser.parse_args()
     filename = args.output
+    line_size = args.line_size
 
     cv2.namedWindow("preview")
     vc = cv2.VideoCapture(0)
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     else:
         rval = False
     
-    timescope = TimeScope(frame.shape, line_size=2)
+    timescope = TimeScope(frame.shape, line_size=line_size)
     if filename: 
         fourcc = cv2.cv.CV_FOURCC(*'DIVX')
         out = cv2.VideoWriter(filename, fourcc, 25.0, frame.shape[-2::-1])
